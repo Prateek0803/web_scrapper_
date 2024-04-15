@@ -1,17 +1,22 @@
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
+import dotenv from "dotenv";
+
 import Crawler from "./scrapper.js";
 import MySQLConnection from "./db.js";
 import clientRoutes from "./clientRoutes.js";
+import ElasticsearchConfig from "./elasticsearchConfig.js";
 
 const app = express();
 const crawler = new Crawler("https://bit.ly/3lmNMTA");
 const mysqlConnection = new MySQLConnection();
+const elasticsearchConfig = new ElasticsearchConfig("http://localhost:9200");
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors());
+dotenv.config();
 
 app.use("/", clientRoutes);
 
@@ -31,7 +36,8 @@ const scrape = async () => {
   await crawler.ScrapeData();
 };
 
-app.listen(8000, () => {
+app.listen(process.env.PORT, async () => {
+  await elasticsearchConfig.connect();
   mysqlConnection.connect();
   console.log("Server started");
 });

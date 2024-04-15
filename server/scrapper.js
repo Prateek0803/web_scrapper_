@@ -2,6 +2,7 @@ import axios from "axios";
 import * as cheerio from "cheerio";
 import moment from "moment";
 import MySQLConnection from "./db.js";
+import ElasticsearchConfig from "./elasticsearchConfig.js";
 
 class Crawler {
   constructor(url = "") {
@@ -10,6 +11,7 @@ class Crawler {
     this.baseUrl = "https://www.companydetails.in";
     this.scrapedData = [];
     this.mysqlConnection = new MySQLConnection();
+    this.elasticsearchClient = new ElasticsearchConfig("http://localhost:9200");
   }
 
   async ScrapeData() {
@@ -23,9 +25,10 @@ class Crawler {
           modifiedLinkToProcessThePage
         );
         await this.ValidateAndInsertData(processedData);
+        await this.InsertDataToElasticsearch(processedData);
       });
     } catch (error) {
-      console.log("error scareData method>>", error);
+      console.log("ScrapeDataFailed", error);
     }
   }
 
@@ -113,6 +116,62 @@ class Crawler {
     });
 
     await this.mysqlConnection.insertData(data);
+  }
+
+  async InsertDataToElasticsearch(data) {
+    try {
+      const index = "company_data";
+      const client = this.elasticsearchClient.getClient();
+      const mapping = {
+        companyname: { type: "text" },
+        companyactivity: { type: "text" },
+        cin: { type: "keyword" },
+        registrationdate: { type: "date", format: "yyyy-MM-dd" },
+        category: { type: "text" },
+        subcategory: { type: "text" },
+        companyclass: { type: "text" },
+        roc: { type: "text" },
+        companystatus: { type: "text" },
+        authorisedcapital: { type: "integer" },
+        paidupcapital: { type: "integer" },
+        lastannualgeneralmeetingdate: { type: "text" },
+        latestdateofbalancesheet: { type: "text" },
+        state: { type: "text" },
+        pincode: { type: "keyword" },
+        country: { type: "text" },
+        address: { type: "text" },
+        email: { type: "keyword" },
+      };
+
+      const indexExists = await client.indices.exists({
+        index,
+      });
+
+      if (!indexExists) {
+        await client.indices.create({
+          index,
+          body: { mappings: { properties: mapping } },
+        });
+      } else {
+        console.log(`Index '${index}' already exists.`);
+      }
+
+      if (data.registrationdate) {
+        data.registrationdate = moment(
+          data.registrationdate,
+          "DD-MMM-YYYY"
+        ).format("YYYY-MM-DD");
+      }
+
+      await client.index({
+        index,
+        body: data,
+      });
+
+      console.log("Data inserted into Elasticsearch successfully.");
+    } catch (error) {
+      console.error("Error inserting data into Elasticsearch:", error);
+    }
   }
 }
 

@@ -1,12 +1,15 @@
 import mysql from "mysql";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 class MySQLConnection {
   constructor() {
     this.connection = mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "root",
-      database: "ykone",
+      host: process.env.MYSQL_HOST,
+      user: process.env.MYSQL_USER,
+      password: process.env.MYSQL_PASSWORD,
+      database: process.env.MYSQL_DATABASE,
     });
   }
 
