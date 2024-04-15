@@ -13,7 +13,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(cors());
 
-app.use(clientRoutes);
+app.use("/", clientRoutes);
 
 app.get("/scrape", async (req, res) => {
   console.log("Starting scraping...");

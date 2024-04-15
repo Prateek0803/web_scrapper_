@@ -98,11 +98,10 @@ router.delete("/clients/:id", (req, res) => {
         console.error("Error deleting client:", err);
         return res.status(500).send("Error deleting client");
       }
-      console.log(result);
       if (result.affectedRows === 0) {
         return res.status(404).send("Client not found");
       }
-      res.json({ message: "Client deleted successfully" });
+      res.status(200).json({ message: "Client deleted successfully" });
     }
   );
 });
