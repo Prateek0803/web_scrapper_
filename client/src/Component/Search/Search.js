@@ -1,13 +1,16 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./styles.css";
 import Button from "../Button/Button";
 
 const SearchBox = ({ onSearch, setShowForm, setEditFormData }) => {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const handleChange = (value) => {
-    setSearchTerm(value);
-  };
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearch(searchTerm);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const addNewClientHandler = () => {
     setShowForm(true);
@@ -22,7 +25,7 @@ const SearchBox = ({ onSearch, setShowForm, setEditFormData }) => {
           placeholder="Search with cin, email, company name....."
           className="search-input"
           value={searchTerm}
-          onChange={(e) => handleChange(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
         <Button title="Search" />
       </div>
